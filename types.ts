@@ -1,4 +1,5 @@
 
+
 export interface NewsArticle {
   id: string;
   title: string;
@@ -15,6 +16,12 @@ export interface Source {
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'bot';
+  text: string;
+  timestamp: Date;
+}
+
+export interface VisitorReview {
+  id: string;
   text: string;
   timestamp: Date;
 }

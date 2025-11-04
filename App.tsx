@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchEnvironmentalNews, fetchDetailedArticleContent, fetchEnvironmentalFacts } from './services/geminiService';
-import { NewsArticle } from './types';
+import { NewsArticle, VisitorReview } from './types';
 import NewsCard from './components/NewsCard';
 import LoadingSpinner from './components/LoadingSpinner';
 import ChatbotWindow from './components/ChatbotWindow'; // Import the new ChatbotWindow component
+import ReviewForm from './components/ReviewForm'; // Import ReviewForm
+import ReviewList from './components/ReviewList'; // Import ReviewList
 
 // New component for displaying a detailed article
 interface DetailedArticleViewProps {
@@ -101,6 +102,7 @@ function App() {
   const [isAccMenuOpen, setIsAccMenuOpen] = useState<boolean>(false); // State for accessibility menu
   const [textSize, setTextSize] = useState<'small' | 'normal' | 'large' | 'xl'>('normal'); // State for text size
   const [highContrast, setHighContrast] = useState<boolean>(false); // State for high contrast
+  const [reviews, setReviews] = useState<VisitorReview[]>([]); // State for visitor reviews
 
   // Effect to apply text size and high contrast classes to the document
   useEffect(() => {
@@ -208,6 +210,15 @@ function App() {
 
   const toggleChatbot = () => {
     setIsChatbotOpen(!isChatbotOpen);
+  };
+
+  const handleAddReview = (reviewText: string) => {
+    const newReview: VisitorReview = {
+      id: Date.now().toString(),
+      text: reviewText,
+      timestamp: new Date(),
+    };
+    setReviews((prevReviews) => [newReview, ...prevReviews]); // Add new review at the beginning
   };
 
   return (
@@ -357,6 +368,13 @@ function App() {
                   {!loading && news.length === 0 && !error && (
                     <p className="text-center text-lg text-gray-600 mt-8">Aucune actualité trouvée pour le moment. Veuillez recharger.</p>
                   )}
+                </section>
+
+                {/* Section Avis et Feedback des Visiteurs */}
+                <section className="bg-white p-8 rounded-lg shadow-lg my-8" aria-labelledby="reviews-section-title">
+                  <h2 id="reviews-section-title" className="text-3xl font-bold text-blue-700 mb-4">Avis et Feedback des Visiteurs</h2>
+                  <ReviewForm onSubmit={handleAddReview} />
+                  <ReviewList reviews={reviews} />
                 </section>
               </>
             )}
