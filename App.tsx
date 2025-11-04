@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchEnvironmentalNews, fetchDetailedArticleContent, fetchEnvironmentalFacts } from './services/geminiService';
 import { NewsArticle, VisitorReview } from './types';
 import NewsCard from './components/NewsCard';
@@ -36,6 +36,11 @@ const DetailedArticleView: React.FC<DetailedArticleViewProps> = ({ article, onBa
     loadDetailedContent();
   }, [article.title, article.summary]);
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.style.display = 'none'; // Hide broken image
+    e.currentTarget.onerror = null; // Prevent infinite loop
+  };
+
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg my-8 relative">
       <button
@@ -46,7 +51,21 @@ const DetailedArticleView: React.FC<DetailedArticleViewProps> = ({ article, onBa
         &#x2190; Retour
       </button>
       <h2 className="text-4xl font-extrabold text-green-800 mb-4">{article.title}</h2>
+      {article.category && (
+        <span className={`inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full mb-4`}>
+          {article.category}
+        </span>
+      )}
       <p className="text-xl text-gray-700 italic mb-6">{article.summary}</p>
+
+      {article.imageUrl && (
+        <img
+          src={article.imageUrl}
+          alt={`Illustration pour ${article.title}`}
+          className="w-full h-72 object-cover rounded-md mb-6"
+          onError={handleImageError}
+        />
+      )}
 
       {loadingContent ? (
         <LoadingSpinner />
@@ -103,6 +122,11 @@ function App() {
   const [textSize, setTextSize] = useState<'small' | 'normal' | 'large' | 'xl'>('normal'); // State for text size
   const [highContrast, setHighContrast] = useState<boolean>(false); // State for high contrast
   const [reviews, setReviews] = useState<VisitorReview[]>([]); // State for visitor reviews
+
+  // State for sorting and filtering
+  const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const availableCategories = ['all', 'Destruction', 'Conservation', 'Protection'];
 
   // Effect to apply text size and high contrast classes to the document
   useEffect(() => {
@@ -191,7 +215,7 @@ function App() {
       // Assume success and immediately try to load content.
       setHasApiKey(true);
       // Clear existing errors before reloading
-      setError(null); 
+      setError(null);
       setSelectedArticle(null); // Go back to main view
       await loadAllContent(true);
     } catch (err) {
@@ -220,6 +244,25 @@ function App() {
     };
     setReviews((prevReviews) => [newReview, ...prevReviews]); // Add new review at the beginning
   };
+
+  // Memoized filtered and sorted news
+  const filteredAndSortedNews = useMemo(() => {
+    let currentNews = [...news]; // Start with a copy of the fetched news
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      currentNews = currentNews.filter(article => article.category === selectedCategory);
+    }
+
+    // Sort by date
+    if (sortOrder === 'latest') {
+      currentNews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else if (sortOrder === 'oldest') {
+      currentNews.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }
+
+    return currentNews;
+  }, [news, selectedCategory, sortOrder]);
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
@@ -355,18 +398,66 @@ function App() {
 
                 <section className="my-8" aria-labelledby="news-section-title">
                   <h2 id="news-section-title" className="text-3xl font-bold text-green-700 mb-6 text-center">Dernières Actualités Environnementales</h2>
+
+                  {/* Sorting and Filtering Controls */}
+                  <div className="flex flex-wrap justify-center gap-4 mb-8">
+                    {/* Sort Order */}
+                    <div className="relative">
+                      <label htmlFor="sort-select" className="sr-only">Trier par</label>
+                      <select
+                        id="sort-select"
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value as 'latest' | 'oldest')}
+                        className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg shadow-sm leading-tight focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                        aria-label="Trier les actualités par"
+                      >
+                        <option value="latest">Plus récentes</option>
+                        <option value="oldest">Plus anciennes</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      </div>
+                    </div>
+
+                    {/* Category Filter */}
+                    <div className="relative">
+                      <label htmlFor="category-select" className="sr-only">Filtrer par catégorie</label>
+                      <select
+                        id="category-select"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg shadow-sm leading-tight focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                        aria-label="Filtrer les actualités par catégorie"
+                      >
+                        {availableCategories.map(category => (
+                          <option key={category} value={category}>
+                            {category === 'all' ? 'Toutes les catégories' : category}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
                   {loading && <LoadingSpinner />}
 
-                  {!loading && news.length > 0 && (
+                  {!loading && filteredAndSortedNews.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                      {news.map((article) => (
+                      {filteredAndSortedNews.map((article) => (
                         <NewsCard key={article.id} article={article} onClick={handleArticleClick} />
                       ))}
                     </div>
                   )}
 
-                  {!loading && news.length === 0 && !error && (
-                    <p className="text-center text-lg text-gray-600 mt-8">Aucune actualité trouvée pour le moment. Veuillez recharger.</p>
+                  {!loading && filteredAndSortedNews.length === 0 && !error && (
+                    <p className="text-center text-lg text-gray-600 mt-8">
+                      {selectedCategory === 'all'
+                        ? "Aucune actualité trouvée pour le moment. Veuillez recharger."
+                        : `Aucune actualité trouvée dans la catégorie "${selectedCategory}".`
+                      }
+                    </p>
                   )}
                 </section>
 
