@@ -19,6 +19,60 @@
   }
 }
 </script>
+<style>
+    /* Base font size for 'normal' */
+    html {
+        font-size: 16px; /* Default for text-base in Tailwind */
+    }
+
+    /* Text size adjustments (affecting 'rem' units) */
+    html.text-size-small { font-size: 14px; }
+    html.text-size-large { font-size: 18px; }
+    html.text-size-xl { font-size: 20px; }
+
+    /* High Contrast Mode */
+    body.high-contrast {
+        /* Override background gradient with solid high contrast background */
+        background: #000000 !important;
+        background-image: none !important;
+
+        /* Override text colors to be high contrast */
+        color: #ffffff !important;
+    }
+
+    /* Specific Tailwind class overrides for high contrast mode */
+    body.high-contrast .bg-gradient-to-br { background-image: none !important; background-color: #000000 !important; }
+    body.high-contrast .bg-white { background-color: #333333 !important; border-color: #666666 !important; }
+    body.high-contrast .text-gray-800 { color: #ffffff !important; }
+    body.high-contrast .text-gray-700 { color: #e0e0e0 !important; }
+    body.high-contrast .text-gray-600 { color: #cccccc !important; }
+    body.high-contrast .text-blue-500 { color: #ffff00 !important; } /* Bright yellow for links */
+    body.high-contrast .hover\:text-blue-700:hover { color: #ffffff !important; }
+    body.high-contrast .text-green-700 { color: #00ff00 !important; } /* Bright green */
+    body.high-contrast .text-green-800 { color: #00ff00 !important; }
+    body.high-contrast .text-blue-600 { color: #00ffff !important; } /* Cyan */
+    body.high-contrast .bg-blue-100 { background-color: #0056b3 !important; } /* High contrast for chatbot user */
+    body.high-contrast .text-blue-900 { color: #ffffff !important; }
+    body.high-contrast .bg-green-50 { background-color: #004d00 !important; } /* High contrast for chatbot bot */
+    body.high-contrast .text-green-900 { color: #ffffff !important; }
+    body.high-contrast .bg-green-600 { background-color: #008000 !important; } /* High contrast for primary buttons */
+    body.high-contrast .hover\:bg-green-700:hover { background-color: #00a000 !important; }
+    body.high-contrast .bg-blue-600 { background-color: #0000cc !important; } /* High contrast for secondary buttons */
+    body.high-contrast .hover\:bg-blue-700:hover { background-color: #0000ff !important; }
+    body.high-contrast .bg-gray-200 { background-color: #666666 !important; }
+    body.high-contrast .hover\:bg-gray-300:hover { background-color: #888888 !important; }
+    body.high-contrast .bg-gray-700 { background-color: #555555 !important; }
+    body.high-contrast .hover\:bg-gray-800:hover { background-color: #777777 !important; }
+    body.high-contrast .border-gray-200 { border-color: #666666 !important; }
+    body.high-contrast .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -2px rgba(0,0,0,0.2) !important; }
+    body.high-contrast .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.14) !important; }
+    body.high-contrast .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6), 0 10px 10px -5px rgba(0,0,0,0.2) !important; }
+    body.high-contrast .border-gray-300 { border-color: #999999 !important; }
+    body.high-contrast .bg-red-100 { background-color: #440000 !important; color: #ffcccc !important; border-color: #ff0000 !important; }
+    body.high-contrast .text-red-700 { color: #ffcccc !important; }
+    body.high-contrast .text-red-600 { color: #ff0000 !important; }
+    body.high-contrast .bg-red-50 { background-color: #440000 !important; color: #ffcccc !important; border-color: #ff0000 !important; }
+</style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen text-gray-800 antialiased">
     <div id="root"></div>

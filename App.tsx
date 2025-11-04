@@ -4,6 +4,7 @@ import { fetchEnvironmentalNews, fetchDetailedArticleContent, fetchEnvironmental
 import { NewsArticle } from './types';
 import NewsCard from './components/NewsCard';
 import LoadingSpinner from './components/LoadingSpinner';
+import ChatbotWindow from './components/ChatbotWindow'; // Import the new ChatbotWindow component
 
 // New component for displaying a detailed article
 interface DetailedArticleViewProps {
@@ -96,6 +97,24 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [isChatbotOpen, setIsChatbotOpen] = useState<boolean>(false); // State for chatbot
+  const [isAccMenuOpen, setIsAccMenuOpen] = useState<boolean>(false); // State for accessibility menu
+  const [textSize, setTextSize] = useState<'small' | 'normal' | 'large' | 'xl'>('normal'); // State for text size
+  const [highContrast, setHighContrast] = useState<boolean>(false); // State for high contrast
+
+  // Effect to apply text size and high contrast classes to the document
+  useEffect(() => {
+    // Apply text size class to HTML element
+    document.documentElement.classList.remove('text-size-small', 'text-size-normal', 'text-size-large', 'text-size-xl');
+    document.documentElement.classList.add(`text-size-${textSize}`);
+
+    // Apply high contrast class to BODY element
+    if (highContrast) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
+  }, [textSize, highContrast]);
 
   const loadAllContent = useCallback(async (selectedApiKey: boolean) => {
     if (!selectedApiKey) {
@@ -187,8 +206,12 @@ function App() {
     setSelectedArticle(null);
   };
 
+  const toggleChatbot = () => {
+    setIsChatbotOpen(!isChatbotOpen);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center p-4 bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen flex flex-col items-center p-4">
       <header className="w-full max-w-4xl text-center py-8">
         <h1 className="text-5xl font-extrabold text-green-800 tracking-tight leading-tight">
           Eco<span className="text-blue-600">Actu</span>
@@ -197,6 +220,64 @@ function App() {
           Votre source d'informations à jour sur l'environnement
         </p>
       </header>
+
+      {/* Accessibility Menu Button and Panel */}
+      <div className="fixed top-4 right-4 z-50">
+          <button
+              onClick={() => setIsAccMenuOpen(!isAccMenuOpen)}
+              className="p-3 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 transition-all duration-300"
+              aria-label="Ouvrir les paramètres d'accessibilité"
+          >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+          </button>
+          {isAccMenuOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl p-4 space-y-4 border border-gray-200">
+                  {/* Text size controls */}
+                  <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Taille du Texte</h3>
+                      <div className="flex justify-between space-x-2">
+                          {['small', 'normal', 'large', 'xl'].map((size) => (
+                              <button
+                                  key={size}
+                                  onClick={() => setTextSize(size as 'small' | 'normal' | 'large' | 'xl')}
+                                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200
+                                      ${textSize === size ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}
+                                      focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2`}
+                                  aria-pressed={textSize === size}
+                                  aria-label={`Définir la taille du texte à ${size}`}
+                              >
+                                  {size.charAt(0).toUpperCase() + size.slice(1)}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* Contrast controls */}
+                  <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Contraste des Couleurs</h3>
+                      <label className="flex items-center cursor-pointer">
+                          <div className="relative">
+                              <input
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={highContrast}
+                                  onChange={() => setHighContrast(!highContrast)}
+                                  aria-label="Activer ou désactiver le mode contraste élevé"
+                              />
+                              <div className="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                              <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300
+                                  ${highContrast ? 'translate-x-full bg-green-500' : ''}`}></div>
+                          </div>
+                          <div className="ml-3 text-gray-700 font-medium">
+                              Contraste Élevé
+                          </div>
+                      </label>
+                  </div>
+              </div>
+          )}
+      </div>
 
       <main className="w-full max-w-4xl flex-grow">
         {!hasApiKey ? (
@@ -293,6 +374,32 @@ function App() {
             {loading || loadingFacts ? 'Rechargement...' : 'Recharger les Actualités & Faits'}
           </button>
         </footer>
+      )}
+
+      {/* Chatbot Floating Action Button */}
+      <button
+        onClick={toggleChatbot}
+        className="fixed bottom-8 right-8 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 z-50"
+        aria-label={isChatbotOpen ? "Fermer le chatbot" : "Ouvrir le chatbot"}
+      >
+        {isChatbotOpen ? (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Chatbot Window */}
+      {isChatbotOpen && (
+        <ChatbotWindow
+          onClose={() => setIsChatbotOpen(false)}
+          hasApiKey={hasApiKey}
+          onSelectApiKey={handleSelectApiKey}
+        />
       )}
     </div>
   );

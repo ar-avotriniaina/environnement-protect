@@ -11,3 +11,10 @@ export interface Source {
   uri: string;
   title?: string;
 }
+
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'bot';
+  text: string;
+  timestamp: Date;
+}

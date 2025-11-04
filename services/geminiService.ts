@@ -1,6 +1,5 @@
-
-import { GoogleGenAI, GenerateContentResponse, Type, Modality } from "@google/genai";
-import { NewsArticle, Source } from "../types";
+import { GoogleGenAI, GenerateContentResponse, Type, Modality, Chat } from "@google/genai";
+import { NewsArticle, Source, ChatMessage } from "../types";
 
 // Helper functions (encode/decode) are not directly used for text generation,
 // but kept for consistency if future multi-modal needs arise.
@@ -70,10 +69,12 @@ Résumé: [Résumé de l'actualité]
             articleSources.push({ uri: chunk.maps.uri, title: chunk.maps.title });
             if (chunk.maps.placeAnswerSources) {
               chunk.maps.placeAnswerSources.reviewSnippets?.forEach(snippet => {
-                // Ensure 'uri' exists before pushing
-                // Fix: Access 'uri' and 'title' directly from the snippet object, as 'link' property does not exist.
-                if (snippet.uri) {
-                  articleSources.push({ uri: snippet.uri, title: snippet.title || "Review Snippet" });
+                // Fix: The 'GroundingChunkMapsPlaceAnswerSourcesReviewSnippet' type, as inferred by TypeScript,
+                // does not explicitly declare 'uri' and 'title'. Based on API guidelines that 'reviewSnippets'
+                // include URLs, we assert the type to 'Source' to access these properties.
+                const reviewSource = snippet as Source;
+                if (reviewSource.uri) {
+                  articleSources.push({ uri: reviewSource.uri, title: reviewSource.title || "Review Snippet" });
                 }
               });
             }
@@ -120,7 +121,7 @@ Contenu détaillé:`;
       },
     });
     return response.text;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching detailed article content:", error);
     if (String(error).includes("API_KEY_INVALID") || String(error).includes("Requested entity was not found.")) {
       throw new Error("Clé API invalide ou non sélectionnée. Veuillez sélectionner votre clé API.");
@@ -145,11 +146,31 @@ export const fetchEnvironmentalFacts = async (): Promise<string> => {
       },
     });
     return response.text;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching environmental facts:", error);
     if (String(error).includes("API_KEY_INVALID") || String(error).includes("Requested entity was not found.")) {
       throw new Error("Clé API invalide ou non sélectionnée. Veuillez sélectionner votre clé API.");
     }
     throw new Error(`Failed to fetch environmental facts from Gemini API: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+// Function to create a new chat session
+export const createChatSession = (): Chat => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return ai.chats.create({
+    model: 'gemini-2.5-flash',
+    config: {
+      systemInstruction: 'Vous êtes un assistant environnemental amical et informatif nommé EcoBot. Vous pouvez répondre à des questions sur la destruction, la conservation et la protection de l\'environnement, ainsi que sur les actualités récentes. Votre objectif est de fournir des informations précises et utiles pour sensibiliser et inspirer l\'action.',
+      tools: [{ googleSearch: {} }], // Enable Google Search for up-to-date info
+    },
+  });
+};
+
+// Function to send a message to the chat and handle streaming response
+export const sendMessageToChat = async (chat: Chat, message: string, onChunk: (chunk: string) => void): Promise<void> => {
+  const responseStream = await chat.sendMessageStream({ message: message });
+  for await (const chunk of responseStream) {
+    onChunk(chunk.text);
   }
 };
